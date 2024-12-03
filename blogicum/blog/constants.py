@@ -1,0 +1,2 @@
+MAX_LENGTH_STRING: int = 256
+ON_MAIN_PAGE: int = 5
