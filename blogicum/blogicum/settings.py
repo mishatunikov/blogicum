@@ -17,6 +17,7 @@ ALLOWED_HOSTS = ['localhost',
 # Application definition
 
 INSTALLED_APPS = [
+    'users.apps.User',
     'core.apps.CoreConfig',
     'blog.apps.BlogConfig',
     'pages.apps.PagesConfig',

@@ -12,5 +12,6 @@ urlpatterns = [
     path('category/<slug:category_slug>/', views.category_posts,
          name='category_posts'),
     path('profile/<slug:username>/', views.profile, name='profile'),
+    path('create/', views.PostCreateView.as_view(), name='create_post'),
     path('', views.index, name='index'),
 ]
