@@ -16,7 +16,6 @@ class PostCreateView(CreateView):
     template_name = 'blog/create.html'
     success_url = reverse_lazy('blog:profile')
 
-
 class IndexListView(ListView):
     model = Post
     paginate_by = ON_MAIN_PAGE
