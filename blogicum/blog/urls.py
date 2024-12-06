@@ -1,8 +1,6 @@
 from django.urls import path
-from django.views.generic import TemplateView, ListView
 
 from blog import views
-from .models import Post
 
 app_name = 'blog'
 
@@ -16,4 +14,5 @@ urlpatterns = [
     path('create/', views.PostCreateView.as_view(), name='create_post'),
     path('profile/<slug:username>/', views.profile, name='profile'),
     path('edit_profile', views.edit_profile, name='edit_profile'),
+    # path('add_comment/<int:pk>', views.CommentCreateView.as_view(), name='add_comment')
 ]

@@ -50,9 +50,14 @@ class Post(PublicationBase):
         'Category',
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name='Категория'
+        verbose_name='Категория',
     )
 
+    image = models.ImageField(
+        'Изображение',
+        upload_to='posts_image',
+        blank=True
+    )
     objects = PostQuerySet.as_manager()
     published = PublishedPostManager()
 

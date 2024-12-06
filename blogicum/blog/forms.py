@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import ModelForm
 
+from blog.models import Post
+
 
 User = get_user_model()
 
@@ -27,3 +29,12 @@ class ProfileBaseForm(ModelForm):
 
 class RegistrationForm(ProfileBaseForm, UserCreationForm):
     pass
+
+
+class PostForm(ModelForm):
+    class Meta:
+        model = Post
+        exclude = ('author', 'is_published',)
+        widgets = {
+            'pub_date': forms.DateTimeInput(attrs={'type': 'datetime-local'})
+        }

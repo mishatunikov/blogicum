@@ -1,4 +1,3 @@
-from django.db.models.query import QuerySet
 from django.shortcuts import (get_list_or_404, redirect, render,
                               get_object_or_404)
 from django.urls import reverse_lazy
@@ -7,19 +6,29 @@ from django.views.generic import CreateView, UpdateView, ListView, DetailView
 
 from blog.models import Post, Category, User
 from .constants import ON_MAIN_PAGE
-from blog.forms import ProfileBaseForm
+from blog.forms import ProfileBaseForm, PostForm
+
+
+class CommentCreateView(CreateView):
+    pass
 
 
 class PostCreateView(CreateView):
-    model = Post
-    fields = '__all__'
+    form_class = PostForm
     template_name = 'blog/create.html'
-    success_url = reverse_lazy('blog:profile')
+    success_url = reverse_lazy('blog:index')
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
 
 class IndexListView(ListView):
-    model = Post
     paginate_by = ON_MAIN_PAGE
     template_name = 'blog/index.html'
+
+    def get_queryset(self):
+        return Post.published.all()
 
 
 def edit_profile(request):
@@ -33,7 +42,12 @@ def edit_profile(request):
 
 def profile(request, username):
     user = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(author__username=username)
+
+    if username == request.user.username:
+        posts = Post.objects.filter(author__username=username)
+    else:
+        posts = Post.published.filter(author__username=username)
+
     paginator = Paginator(posts, ON_MAIN_PAGE)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'blog/profile.html', {'page_obj': page_obj,
