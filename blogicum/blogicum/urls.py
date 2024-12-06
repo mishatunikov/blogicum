@@ -19,10 +19,14 @@ from django.conf import settings
 from django.views.generic.edit import CreateView
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
+from blog.forms import RegistrationForm
+
 
 handler404 = 'core.views.page_not_found'
 handler500 = 'core.views.internet_server_error'
 
+
+User = get_user_model()
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('pages/', include('pages.urls')),
@@ -31,8 +35,7 @@ urlpatterns = [
         'auth/registration',
         CreateView.as_view(
             template_name='registration/registration_form.html',
-            model=get_user_model(),
-            fields='__all__',
+            form_class=RegistrationForm,
             success_url=reverse_lazy('login')
         ),
         name='registration'

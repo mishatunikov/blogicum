@@ -1,15 +1,13 @@
-from django.shortcuts import get_list_or_404, render, get_object_or_404
+from django.db.models.query import QuerySet
+from django.shortcuts import (get_list_or_404, redirect, render,
+                              get_object_or_404)
 from django.urls import reverse_lazy
 from django.core.paginator import Paginator
-from django.views.generic import ListView, CreateView
-from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import UserCreationForm
+from django.views.generic import CreateView, UpdateView, ListView, DetailView
 
-from blog.models import Post, Category
+from blog.models import Post, Category, User
 from .constants import ON_MAIN_PAGE
-
-
-User = get_user_model()
+from blog.forms import ProfileBaseForm
 
 
 class PostCreateView(CreateView):
@@ -19,23 +17,28 @@ class PostCreateView(CreateView):
     success_url = reverse_lazy('blog:profile')
 
 
-def profile(request, username):
-    posts = Post.objects.filter(author__username=username)
-    user = User.objects.get(username=username)
-    paginator = Paginator(posts, ON_MAIN_PAGE)
+class IndexListView(ListView):
+    model = Post
+    paginate_by = ON_MAIN_PAGE
+    template_name = 'blog/index.html'
 
+
+def edit_profile(request):
+    instance = get_object_or_404(User, username=request.user)
+    form = ProfileBaseForm(request.POST or None, instance=instance)
+    if form.is_valid():
+        form.save()
+        return redirect('blog:profile', username=request.user)
+    return render(request, 'blog/user.html', {'form': form})
+
+
+def profile(request, username):
+    user = get_object_or_404(User, username=username)
+    posts = Post.objects.filter(author__username=username)
+    paginator = Paginator(posts, ON_MAIN_PAGE)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'blog/profile.html', {'page_obj': page_obj,
                                                  'profile': user})
-
-
-def index(request):
-    """Отвечает за рендеринг главной страницы."""
-    posts = Post.published.all()
-    paginator = Paginator(posts, ON_MAIN_PAGE)
-    page_obj = paginator.get_page(request.GET.get('page'))
-    context = {'page_obj': page_obj}
-    return render(request, 'blog/index.html', context)
 
 
 def post_detail(request, post_id: int):
@@ -59,5 +62,21 @@ def category_posts(request, category_slug: str):
         'category': category_slug,
         'page_obj': page_obj
     }
-
     return render(request, 'blog/category.html', context)
+
+
+# Класс для отображения профиля на CBV
+# class ProfileListView(ListView):
+#     model = Post
+#     paginate_by = 10
+#     template_name = 'blog/profile.html'
+
+#     def get_queryset(self):
+#         return (Post.objects
+#                 .select_related('author')
+#                 .filter(author__username=self.kwargs['username']))
+
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context['profile'] = get_object_or_404(User, username=self.kwargs['username'])
+#         return context
