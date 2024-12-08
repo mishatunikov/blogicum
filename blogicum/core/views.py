@@ -11,3 +11,7 @@ def csrf_failure(request, reason=''):
 
 def internet_server_error(request):
     return render(request, 'pages/500.html', status=500)
+
+
+def access_denied(request, exception):
+    return render(request, 'pages/403.html', status=403)

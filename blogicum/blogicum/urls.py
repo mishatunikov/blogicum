@@ -24,7 +24,7 @@ from blog.forms import RegistrationForm
 
 handler404 = 'core.views.page_not_found'
 handler500 = 'core.views.internet_server_error'
-
+handler403 = 'core.views.access_denied'
 
 User = get_user_model()
 urlpatterns = [

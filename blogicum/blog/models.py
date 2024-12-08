@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 from .constants import MAX_LENGTH_STRING
 from .querysets import PostQuerySet, PublishedPostManager
@@ -61,6 +62,10 @@ class Post(PublicationBase):
     objects = PostQuerySet.as_manager()
     published = PublishedPostManager()
 
+    @property
+    def comment_count(self):
+        return self.comment.count
+
     class Meta:
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
@@ -69,6 +74,11 @@ class Post(PublicationBase):
 
     def __str__(self) -> str:
         return self.title
+
+    def get_absolute_url(self):
+        # С помощью функции reverse() возвращаем URL объекта.
+        return reverse('blog:profile', kwargs={'username': self.author})
+
 
 
 class Category(PublicationBase):
@@ -98,3 +108,16 @@ class Location(PublicationBase):
 
     def __str__(self) -> str:
         return self.name
+
+
+class Comment(models.Model):
+    text = models.TextField('Текст комментария')
+    created_at = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'комментарий'
+        verbose_name_plural = 'Комментарии'
+        default_related_name = 'comment'
+        ordering = ('created_at',)
