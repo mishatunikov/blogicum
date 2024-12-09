@@ -12,12 +12,11 @@ User = get_user_model()
 class ProfileBaseForm(ModelForm):
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email')
+        fields = ('username', 'first_name', 'last_name', 'email',)
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
         username = self.cleaned_data.get('username')
-        print(username)
         if (User.objects
                 .exclude(username=username)
                 .filter(email=email)):

@@ -360,7 +360,7 @@ class TestContent:
                 "Убедитесь, что на главной странице не отображаются посты, "
                 "снятые с публикации."
             )
-
+        
         response = self.category_tester.user_client_testget()
         try:
             items_key = self.category_tester.items_key

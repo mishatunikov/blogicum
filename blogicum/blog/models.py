@@ -1,10 +1,11 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 
 from .constants import MAX_LENGTH_STRING
 from .querysets import PostQuerySet, PublishedPostManager
 
+from .utils import get_short_text
+from .constants import COMMENT_DISPLAY_LENGTH
 
 User = get_user_model()
 
@@ -56,7 +57,7 @@ class Post(PublicationBase):
 
     image = models.ImageField(
         'Изображение',
-        upload_to='posts_image',
+        upload_to='posts_images',
         blank=True
     )
     objects = PostQuerySet.as_manager()
@@ -74,11 +75,6 @@ class Post(PublicationBase):
 
     def __str__(self) -> str:
         return self.title
-
-    def get_absolute_url(self):
-        # С помощью функции reverse() возвращаем URL объекта.
-        return reverse('blog:profile', kwargs={'username': self.author})
-
 
 
 class Category(PublicationBase):
@@ -121,3 +117,6 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
         default_related_name = 'comment'
         ordering = ('created_at',)
+
+    def __str__(self) -> str:
+        return get_short_text(self.text, max_symbols=COMMENT_DISPLAY_LENGTH)

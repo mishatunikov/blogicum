@@ -1,10 +1,17 @@
 from django.contrib import admin
 
-from .models import Post, Category, Location
+from .models import Post, Category, Location, Comment
+from .utils import get_short_text
+from .constants import COMMENT_DISPLAY_LENGTH
 
 
 class PostInline(admin.StackedInline):
     model = Post
+    extra = 1
+
+
+class CommentInline(admin.StackedInline):
+    model = Comment
     extra = 1
 
 
@@ -34,6 +41,8 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
+    inlines = (CommentInline,)
+
     list_display = (
         'title',
         'short_text',
@@ -48,12 +57,7 @@ class PostAdmin(admin.ModelAdmin):
     @admin.display(description='Сокращенный текст')
     def short_text(self, obj) -> str:
         """Выводит сохращенный текст поста."""
-        max_words = 10
-        words = obj.text.split()
-        shortened_text = ' '.join(words[:max_words])
-        if len(words) > max_words:
-            shortened_text += '...'
-        return shortened_text
+        return get_short_text(text=obj.text)
 
     list_editable = (
         'author',
@@ -91,4 +95,30 @@ class LocationAdmin(admin.ModelAdmin):
     list_display_links = ('name', )
 
 
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = (
+        'short_comment',
+        'author',
+        'post',
+        'created_at',
+    )
+    list_editable = ('author', 'post')
+    list_filter = (
+        'author',
+        'post',
+        'created_at',
+    )
+    list_display_links = ('short_comment', )
+
+    @admin.display(description='Сокращенный текст')
+    def short_comment(self, obj) -> str:
+        """Выводит сохращенный текст комментария."""
+        return get_short_text(
+            text=obj.text,
+            max_symbols=COMMENT_DISPLAY_LENGTH
+        )
+
+
 admin.site.empty_value_display = 'Не задано'
+
