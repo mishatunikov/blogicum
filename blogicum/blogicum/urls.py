@@ -13,18 +13,18 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import include, path, reverse_lazy
 from django.conf import settings
-from django.views.generic.edit import CreateView
 from django.conf.urls.static import static
+from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.urls import include, path, reverse_lazy
+from django.views.generic.edit import CreateView
+
 from blog.forms import RegistrationForm
 
-
-handler404 = 'core.views.page_not_found'
-handler500 = 'core.views.internet_server_error'
-handler403 = 'core.views.access_denied'
+handler404 = 'pages.views.page_not_found'
+handler500 = 'pages.views.internet_server_error'
+handler403 = 'pages.views.access_denied'
 
 User = get_user_model()
 urlpatterns = [

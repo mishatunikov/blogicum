@@ -1,17 +1,17 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.shortcuts import (get_list_or_404, redirect, render,
-                              get_object_or_404)
-from django.urls import reverse, reverse_lazy
 from django.core.paginator import Paginator
-from django.views.generic import (CreateView, UpdateView, ListView,
-                                  DetailView, DeleteView)
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse, reverse_lazy
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
-from blog.models import Comment, Post, Category, User
-from .constants import OBJECTS_ON_PAGE
-from blog.forms import CommentForm, ProfileBaseForm, PostForm
+from blog.constants import OBJECTS_ON_PAGE
+from blog.forms import CommentForm, PostForm, ProfileBaseForm
+from blog.models import Category, Comment, Post, User
 
 
+# Главная страница.
 class IndexListView(ListView):
     paginate_by = OBJECTS_ON_PAGE
     template_name = 'blog/index.html'
@@ -20,6 +20,22 @@ class IndexListView(ListView):
         return Post.published.all()
 
 
+# Страница категории.
+def category_posts(request, category_slug: str):
+    category = get_object_or_404(
+        Category,
+        slug=category_slug,
+        is_published=True
+    )
+    posts = category.posts(manager='published').all()
+    paginator = Paginator(posts, OBJECTS_ON_PAGE)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'blog/category.html', {'category': category,
+                                                  'page_obj': page_obj})
+
+
+# Система профиля.
 @login_required
 def edit_profile(request):
     instance = get_object_or_404(User, username=request.user)
@@ -32,7 +48,6 @@ def edit_profile(request):
 
 def profile(request, username):
     user = get_object_or_404(User, username=username)
-
     if username == request.user.username:
         posts = Post.objects.filter(author__username=username)
     else:
@@ -44,17 +59,7 @@ def profile(request, username):
                                                  'profile': user})
 
 
-def category_posts(request, category: str):
-    """Отвечает за рендеринг страницы со всеми постави конкретной категории."""
-    category = get_object_or_404(Category, slug=category)
-    posts = get_list_or_404(category.posts(manager='published').all())
-    paginator = Paginator(posts, 10)
-    page_obj = paginator.get_page(request.GET.get('page'))
-
-    return render(request, 'blog/category.html', {'category': category,
-                                                  'page_obj': page_obj})
-
-
+# Система постинга.
 class PostMixin(LoginRequiredMixin):
     model = Post
     template_name = 'blog/create.html'
@@ -99,18 +104,19 @@ class PostDeleteView(PostChangeMixin, DeleteView):
         return context
 
 
-class PostDetailView(DetailView):
-    model = Post
-    template_name = 'blog/detail.html'
-    pk_url_kwarg = 'post_id'
+def detail_post(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    comments = post.comment.all()
+    form = CommentForm()
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['form'] = CommentForm()
-        context['comments'] = self.object.comment.all()
-        return context
+    if post.is_visible or post.author == request.user:
+        return render(request, 'blog/detail.html', {'post': post,
+                                                    'comments': comments,
+                                                    'form': form})
+    raise Http404
 
 
+# Система комментирования.
 class CommentMixin(LoginRequiredMixin):
     model = Comment
     template_name = 'blog/comment.html'
@@ -162,3 +168,8 @@ class CommentUpdateView(CommentChangeMixin, UpdateView):
 
 class CommentDeleteView(CommentChangeMixin, DeleteView):
     pk_url_kwarg = 'comment_id'
+
+    # Конкретно без этого переопределения не пропускали тесты, требовалось
+    # чтобы в контексте не было "form".
+    def get_context_data(self, **kwargs):
+        return {'comment': self.get_object()}

@@ -11,9 +11,6 @@ class PostQuerySet(models.QuerySet):
                            pub_date__lt=timezone.now(),
                            category__is_published=True)
 
-    def get_posts_by_author(self, author):
-        return self.filter(author__username=author)
-
 
 class PublishedPostManager(models.Manager):
     def get_queryset(self) -> PostQuerySet:

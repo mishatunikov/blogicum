@@ -5,7 +5,6 @@ from django.forms import ModelForm
 
 from blog.models import Comment, Post
 
-
 User = get_user_model()
 
 

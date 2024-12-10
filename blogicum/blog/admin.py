@@ -1,8 +1,8 @@
 from django.contrib import admin
 
-from .models import Post, Category, Location, Comment
-from .utils import get_short_text
-from .constants import COMMENT_DISPLAY_LENGTH
+from blog.constants import COMMENT_DISPLAY_LENGTH
+from blog.models import Category, Comment, Location, Post
+from blog.utils import get_short_text
 
 
 class PostInline(admin.StackedInline):
@@ -121,4 +121,3 @@ class CommentAdmin(admin.ModelAdmin):
 
 
 admin.site.empty_value_display = 'Не задано'
-

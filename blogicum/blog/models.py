@@ -1,11 +1,10 @@
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
+from django.utils import timezone
 
-from .constants import MAX_LENGTH_STRING
-from .querysets import PostQuerySet, PublishedPostManager
-
-from .utils import get_short_text
-from .constants import COMMENT_DISPLAY_LENGTH
+from blog.constants import COMMENT_DISPLAY_LENGTH, MAX_LENGTH_STRING
+from blog.querysets import PostQuerySet, PublishedPostManager
+from blog.utils import get_short_text
 
 User = get_user_model()
 
@@ -66,6 +65,12 @@ class Post(PublicationBase):
     @property
     def comment_count(self):
         return self.comment.count
+
+    @property
+    def is_visible(self):
+        return (self.pub_date <= timezone.now()
+                and self.category.is_published
+                and self.is_published)
 
     class Meta:
         verbose_name = 'публикация'

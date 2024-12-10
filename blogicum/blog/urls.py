@@ -8,12 +8,12 @@ app_name = 'blog'
 urlpatterns = [
     path('', views.IndexListView.as_view(), name='index'),
 
-    path('category/<slug:category>/', views.category_posts,
+    path('category/<slug:category_slug>/', views.category_posts,
          name='category_posts'),
 
     path('posts/create/', views.PostCreateView.as_view(), name='create_post'),
 
-    path('posts/<int:post_id>/', views.PostDetailView.as_view(),
+    path('posts/<int:post_id>/', views.detail_post,
          name='post_detail'),
 
     path('posts/<int:post_id>/edit/', views.PostUpdateView.as_view(),
