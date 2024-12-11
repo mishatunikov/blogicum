@@ -1,6 +1,4 @@
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.paginator import Paginator
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -11,8 +9,12 @@ from blog.forms import CommentForm, PostForm, ProfileBaseForm
 from blog.models import Category, Comment, Post, User
 
 
+class ListViewMixin(ListView):
+    paginate_by = OBJECTS_ON_PAGE
+
+
 # Главная страница.
-class IndexListView(ListView):
+class IndexListView(ListViewMixin):
     paginate_by = OBJECTS_ON_PAGE
     template_name = 'blog/index.html'
 
@@ -21,42 +23,61 @@ class IndexListView(ListView):
 
 
 # Страница категории.
-def category_posts(request, category_slug: str):
-    category = get_object_or_404(
-        Category,
-        slug=category_slug,
-        is_published=True
-    )
-    posts = category.posts(manager='published_with_comment').all()
-    paginator = Paginator(posts, OBJECTS_ON_PAGE)
-    page_obj = paginator.get_page(request.GET.get('page'))
+class CategoryPostsListView(ListViewMixin):
+    template_name = 'blog/category.html'
+    category = None
 
-    return render(request, 'blog/category.html', {'category': category,
-                                                  'page_obj': page_obj})
+    def get_queryset(self):
+        self.category = get_object_or_404(Category,
+                                          slug=self.kwargs['category_slug'],
+                                          is_published=True)
+        return self.category.posts(manager='published_with_comment').all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['category'] = self.category
+        return context
 
 
 # Система профиля.
-@login_required
-def edit_profile(request):
-    instance = get_object_or_404(User, username=request.user)
-    form = ProfileBaseForm(request.POST or None, instance=instance)
-    if form.is_valid():
-        form.save()
-        return redirect('blog:profile', username=request.user)
-    return render(request, 'blog/user.html', {'form': form})
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = Post
+    form_class = ProfileBaseForm
+    template_name = 'blog/user.html'
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(User, username=self.request.user)
+
+    def get_success_url(self):
+        return reverse_lazy(
+            'blog:profile', kwargs={
+                'username': self.request.user.username
+            }
+        )
 
 
-def profile(request, username):
-    user = get_object_or_404(User, username=username)
-    if username == request.user.username:
-        posts = Post.objects.comment_count().filter(author__username=username)
-    else:
-        posts = Post.published_with_comment.filter(author__username=username)
+class ProfileListView(ListViewMixin):
+    template_name = 'blog/profile.html'
+    user = None
 
-    paginator = Paginator(posts, OBJECTS_ON_PAGE)
-    page_obj = paginator.get_page(request.GET.get('page'))
-    return render(request, 'blog/profile.html', {'page_obj': page_obj,
-                                                 'profile': user})
+    def get_queryset(self):
+        username = self.kwargs['username']
+        self.user = get_object_or_404(User, username=username)
+
+        if self.request.user.username == username:
+            queryset = (Post.objects
+                            .comment_count()
+                            .filter(author__username=username))
+        else:
+            queryset = (Post.published_with_comment
+                            .filter(author__username=username))
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['profile'] = self.user
+        return context
 
 
 # Система постинга.
