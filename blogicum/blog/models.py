@@ -3,16 +3,30 @@ from django.db import models
 from django.utils import timezone
 
 from blog.constants import COMMENT_DISPLAY_LENGTH, MAX_LENGTH_STRING
-from blog.querysets import PostQuerySet, PublishedPostManager
+from blog.querysets import (PostQuerySet, PublishedPostManager,
+                            PublishedPostWithCommentManager)
 from blog.utils import get_short_text
 
 User = get_user_model()
 
 
-class PublicationBase(models.Model):
+class CreationBase(models.Model):
     """
     Абстрактная моделью.
-    Добавляет к модели дату создания и поле is_published (True по умолчанию).
+    Добавляет к модели дату создания.
+    """
+
+    created_at = models.DateTimeField('Добавлено', auto_now_add=True)
+
+    class Meta:
+        abstract = True
+        ordering = ('-created_at', )
+
+
+class PublicationBase(CreationBase):
+    """
+    Абстрактная моделью.
+    Добавляет к модели поле is_published (True по умолчанию).
     """
 
     is_published = models.BooleanField(
@@ -20,11 +34,9 @@ class PublicationBase(models.Model):
         default=True,
         help_text='Снимите галочку, чтобы скрыть публикацию.'
     )
-    created_at = models.DateTimeField('Добавлено', auto_now_add=True)
 
-    class Meta:
+    class Meta(CreationBase.Meta):
         abstract = True
-        ordering = ('created_at', )
 
 
 class Post(PublicationBase):
@@ -61,10 +73,7 @@ class Post(PublicationBase):
     )
     objects = PostQuerySet.as_manager()
     published = PublishedPostManager()
-
-    @property
-    def comment_count(self):
-        return self.comment.count
+    published_with_comment = PublishedPostWithCommentManager()
 
     @property
     def is_visible(self):
@@ -92,7 +101,7 @@ class Category(PublicationBase):
                   'разрешены символы латиницы, цифры, дефис и подчёркивание.'
     )
 
-    class Meta:
+    class Meta(PublicationBase.Meta):
         verbose_name = 'категория'
         verbose_name_plural = 'Категории'
 
@@ -103,7 +112,7 @@ class Category(PublicationBase):
 class Location(PublicationBase):
     name = models.CharField('Название места', max_length=MAX_LENGTH_STRING)
 
-    class Meta:
+    class Meta(PublicationBase.Meta):
         verbose_name = 'местоположение'
         verbose_name_plural = 'Местоположения'
 
@@ -111,16 +120,23 @@ class Location(PublicationBase):
         return self.name
 
 
-class Comment(models.Model):
+class Comment(CreationBase):
     text = models.TextField('Текст комментария')
-    created_at = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор'
+    )
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        verbose_name='Публикация'
+    )
 
     class Meta:
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'
-        default_related_name = 'comment'
+        default_related_name = 'comments'
         ordering = ('created_at',)
 
     def __str__(self) -> str:

@@ -17,7 +17,7 @@ class IndexListView(ListView):
     template_name = 'blog/index.html'
 
     def get_queryset(self):
-        return Post.published.all()
+        return Post.published_with_comment.all()
 
 
 # Страница категории.
@@ -27,7 +27,7 @@ def category_posts(request, category_slug: str):
         slug=category_slug,
         is_published=True
     )
-    posts = category.posts(manager='published').all()
+    posts = category.posts(manager='published_with_comment').all()
     paginator = Paginator(posts, OBJECTS_ON_PAGE)
     page_obj = paginator.get_page(request.GET.get('page'))
 
@@ -49,9 +49,9 @@ def edit_profile(request):
 def profile(request, username):
     user = get_object_or_404(User, username=username)
     if username == request.user.username:
-        posts = Post.objects.filter(author__username=username)
+        posts = Post.objects.comment_count().filter(author__username=username)
     else:
-        posts = Post.published.filter(author__username=username)
+        posts = Post.published_with_comment.filter(author__username=username)
 
     paginator = Paginator(posts, OBJECTS_ON_PAGE)
     page_obj = paginator.get_page(request.GET.get('page'))
@@ -106,7 +106,7 @@ class PostDeleteView(PostChangeMixin, DeleteView):
 
 def detail_post(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
-    comments = post.comment.all()
+    comments = post.comments.all()
     form = CommentForm()
 
     if post.is_visible or post.author == request.user:
