@@ -1,8 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import Http404
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+from django.views.generic import (CreateView, DeleteView, ListView,
+                                  UpdateView, DetailView)
 
 from blog.constants import OBJECTS_ON_PAGE
 from blog.forms import CommentForm, PostForm, ProfileBaseForm
@@ -125,16 +126,24 @@ class PostDeleteView(PostChangeMixin, DeleteView):
         return context
 
 
-def detail_post(request, post_id):
-    post = get_object_or_404(Post, pk=post_id)
-    comments = post.comments.all()
-    form = CommentForm()
+class PostDetailView(DetailView):
+    model = Post
+    template_name = 'blog/detail.html'
+    pk_url_kwarg = 'post_id'
 
-    if post.is_visible or post.author == request.user:
-        return render(request, 'blog/detail.html', {'post': post,
-                                                    'comments': comments,
-                                                    'form': form})
-    raise Http404
+    def get_object(self, queryset=None):
+        post = super().get_object(queryset)
+        print(post.comments)
+        if not (post.is_visible or post.author == self.request.user):
+            raise Http404
+
+        return post
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({'form': CommentForm(),
+                        'comments': self.get_object().comments.all()})
+        return context
 
 
 # Система комментирования.

@@ -8,7 +8,7 @@ app_name = 'blog'
 post_endpoints = [
     path('create/', views.PostCreateView.as_view(), name='create_post'),
 
-    path('<int:post_id>/', views.detail_post, name='post_detail'),
+    path('<int:post_id>/', views.PostDetailView.as_view(), name='post_detail'),
 
     path('<int:post_id>/edit/', views.PostUpdateView.as_view(),
          name='edit_post'),
