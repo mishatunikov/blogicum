@@ -3,8 +3,7 @@ from django.db import models
 from django.utils import timezone
 
 from blog.constants import COMMENT_DISPLAY_LENGTH, MAX_LENGTH_STRING
-from blog.querysets import (PostQuerySet, PublishedPostManager,
-                            PublishedPostWithCommentManager)
+from blog.querysets import PostQuerySet, PublishedPostManager
 from blog.utils import get_short_text
 
 User = get_user_model()
@@ -73,7 +72,6 @@ class Post(PublicationBase):
     )
     objects = PostQuerySet.as_manager()
     published = PublishedPostManager()
-    published_with_comment = PublishedPostWithCommentManager()
 
     @property
     def is_visible(self):

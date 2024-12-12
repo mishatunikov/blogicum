@@ -62,16 +62,20 @@ class CommentChangeMixin(UserAccessMixin, CommentMixin):
         return object
 
 
-# Главная страница.
 class IndexListView(ListViewMixin):
+    """Главная страница."""
+
     template_name = 'blog/index.html'
 
     def get_queryset(self):
-        return Post.published_with_comment.all()
+        return (
+            Post.published.comment_count()
+        )
 
 
-# Страница категории.
 class CategoryPostsListView(ListViewMixin):
+    """Страница категории."""
+
     template_name = 'blog/category.html'
     category = None
 
@@ -81,7 +85,7 @@ class CategoryPostsListView(ListViewMixin):
             slug=self.kwargs.get('category_slug'),
             is_published=True
         )
-        return self.category.posts(manager='published_with_comment').all()
+        return self.category.posts(manager='published').comment_count()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -118,7 +122,7 @@ class ProfileListView(ListViewMixin):
             posts = self.user.posts.comment_count()
 
         else:
-            posts = self.user.posts(manager='published_with_comment')
+            posts = self.user.posts(manager='published').comment_count()
 
         return posts.all()
 
@@ -142,7 +146,6 @@ class PostUpdateView(PostChangeMixin, UpdateView):
     pk_url_kwarg = 'post_id'
 
     def get_success_url(self) -> str:
-        print(self.pk_url_kwarg)
         return reverse('blog:post_detail',
                        kwargs={self.pk_url_kwarg: self.object.pk})
 
